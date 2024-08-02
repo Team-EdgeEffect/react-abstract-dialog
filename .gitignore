@@ -1,7 +1,7 @@
 node_modules/
 dist/
 
-package-*.tgz
+# package-*.tgz
 
 .yalc
 yalc.lock
