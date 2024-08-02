@@ -12,7 +12,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@edge-effect/react-abstract-dialog": "file:../../package-edge-effect-react-abstract-dialog-1.0.1.tgz",
+        "@edge-effect/react-abstract-dialog": "file:../../package-edge-effect-react-abstract-dialog-1.0.3.tgz",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
         "react-router-dom": "^6.25.1"

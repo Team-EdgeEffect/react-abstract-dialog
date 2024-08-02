@@ -22,6 +22,8 @@ export interface Dialog<DialogResult = unknown> {
     visible: boolean;
     resolve: (value: ShowDialogResult<DialogResult> | PromiseLike<ShowDialogResult<DialogResult>>) => void;
     options?: DialogOptions;
+    hash?: number;
+    order: number;
 }
 
 export interface ShowToastProps extends ToastProps {

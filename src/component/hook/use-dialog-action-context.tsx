@@ -17,7 +17,7 @@ export function useDialogActionContext<DialogResult = void>(config?: UseDialogAc
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [config?.hideDuration, c.dialog?.hash]);
 
     return c as DialogActionContextProviderActions<DialogResult>;
 }

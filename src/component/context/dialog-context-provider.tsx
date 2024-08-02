@@ -45,7 +45,7 @@ export interface DialogContextProviderActions {
     confirm: (args: ConfirmProps, controlOptions?: ControlOptions) => Promise<ConfirmResult>;
     alert: (args: AlertProps, controlOptions?: ControlOptions) => Promise<void>;
     toast: (args: ShowToastProps, controlOptions?: ControlOptions) => void;
-    findDialogById: (id: number) => Dialog | undefined;
+    findDialogById: <DialogResult = unknown>(id: number) => Dialog<DialogResult> | undefined;
     updateDialog: (id: number, update: UpdateDialog) => boolean;
 }
 
@@ -114,6 +114,8 @@ export const DialogContextProvider = ({
                     visible: true,
                     resolve,
                     options: dialogOptions,
+                    hash: new Date().getTime(),
+                    order: foundDialogByUnique.visible ? foundDialogByUnique.order : dialogs.length,
                 };
                 setDialogs((prevDialogs) => {
                     return prevDialogs.map((prevDialog) => {
@@ -133,6 +135,7 @@ export const DialogContextProvider = ({
                     visible: true,
                     resolve,
                     options: dialogOptions,
+                    order: dialogs.length,
                 };
                 setDialogs((prevDialogs) => {
                     return [...prevDialogs, createdDialog];
@@ -264,6 +267,7 @@ export const DialogContextProvider = ({
             // multiple visible dialogs
             return dialogs
                 .filter((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST)
+                .sort((a, b) => a.order - b.order)
                 .map((dialog) => {
                     return (
                         <Fragment key={dialog.id}>
@@ -289,6 +293,7 @@ export const DialogContextProvider = ({
     const toastContents = useMemo(() => {
         return dialogs
             ?.filter((dialog) => dialog.visible && dialog.options?.dialogType === DIALOG_TYPE_TOAST)
+            .sort((a, b) => a.order - b.order)
             .map((dialog) => {
                 return (
                     <Fragment key={dialog.id}>
@@ -299,8 +304,9 @@ export const DialogContextProvider = ({
     }, [dialogs]);
 
     const findDialogById = useCallback(
-        (id: number) => {
-            return dialogs.find((dialog) => dialog.id === id);
+        <DialogResult = unknown,>(id: number) => {
+            const dialog: Dialog<DialogResult> | undefined = dialogs.find((dialog) => dialog.id === id);
+            return dialog;
         },
         [dialogs]
     );

@@ -1,6 +1,6 @@
 {
     "name": "@edge-effect/react-abstract-dialog",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "implementing abstract dialog in react",
     "keywords": [
         "dialog",

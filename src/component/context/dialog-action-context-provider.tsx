@@ -1,6 +1,6 @@
 import React, { ReactNode, useCallback, useMemo, useRef } from "react";
 import { useDialogContext } from "../hook/use-dialog-context";
-import { NavigateOptions } from "../interface/abstract-dialog-interfaces";
+import { Dialog, NavigateOptions } from "../interface/abstract-dialog-interfaces";
 
 // TODO event listeners
 
@@ -10,6 +10,7 @@ interface DialogActionContextProviderProps {
 }
 
 export interface DialogActionContextProviderActions<DialogResult> {
+    dialog: Dialog<DialogResult> | undefined;
     hide: (result?: DialogResult) => void;
     hideAfter: (afterMilliseconds: number, result?: DialogResult) => void;
     doNavigate: (callback: () => void, navigateOptions?: NavigateOptions) => Promise<void>;
@@ -22,7 +23,7 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
     const hideWorkerId = useRef<ReturnType<typeof setTimeout>>();
 
     const currentDialog = useMemo(() => {
-        return findDialogById(id);
+        return findDialogById<DialogResult>(id);
     }, [findDialogById, id]);
 
     const hide = useCallback(
@@ -68,11 +69,12 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
 
     const actions = useMemo<DialogActionContextProviderActions<DialogResult>>(() => {
         return {
+            dialog: currentDialog,
             hide,
             hideAfter,
             doNavigate,
         };
-    }, [hide, hideAfter, doNavigate]);
+    }, [currentDialog, hide, hideAfter, doNavigate]);
 
     return <DialogActionContext.Provider value={actions}>{children}</DialogActionContext.Provider>;
 };
