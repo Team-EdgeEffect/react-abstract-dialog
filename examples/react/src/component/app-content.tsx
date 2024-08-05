@@ -1,9 +1,9 @@
 import { ReactNode } from "react";
 
 import { DialogContextProvider } from "@edge-effect/react-abstract-dialog";
-import Confirm from "./component/popup/confirm";
-import Alert from "./component/popup/alert";
-import Toast from "./component/popup/toast";
+import Confirm from "../component/popup/confirm";
+import Alert from "../component/popup/alert";
+import Toast from "../component/popup/toast";
 import { Outlet } from "react-router-dom";
 
 const AppContent = () => {
