@@ -236,7 +236,7 @@ const MyComponent = () => {
 -   `withHistory` 기능을 활성화 하면, 브라우저 히스토리가 쌓이게 되고. 쌓인 상태로 dialog 에서 외부 또는 내부로 redirect 하려고 할 때 문제가 발생 할 수 있습니다.
 
     -   브라우저 히스토리가 쌓인 상태로 새로운 페이지로 리디렉션 한 뒤 다시 돌아오면 동작되지 않는 히스토리가 쌓여 문제가 됩니다.
-    -   `useDialogActionContext` 의 `doNavigate` 로 redirect 코드를 작성해야 합니다.
+    -   `useDialogContext` 또는 `useDialogActionContext` 의 `doNavigate` 로 redirect 코드를 작성해야 합니다.
     -   예를들어
 
     ```typescript

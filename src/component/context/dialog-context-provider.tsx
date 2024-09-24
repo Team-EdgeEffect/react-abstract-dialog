@@ -11,6 +11,7 @@ import {
     ShowDialogResult,
     ShowToastProps,
     UpdateDialog,
+    NavigateOptions,
 } from "../interface/abstract-dialog-interfaces";
 import { ConfirmProps, ConfirmResult } from "../interface/confirm-interfaces";
 import { AlertProps } from "../interface/alert-interfaces";
@@ -47,6 +48,7 @@ export interface DialogContextProviderActions {
     toast: (args: ShowToastProps, controlOptions?: ControlOptions) => void;
     findDialogById: <DialogResult = unknown>(id: number) => Dialog<DialogResult> | undefined;
     updateDialog: (id: number, update: UpdateDialog) => boolean;
+    doNavigate: (callback: () => void, navigateOptions?: NavigateOptions) => Promise<void>;
 }
 
 export const DialogContext = React.createContext<DialogContextProviderActions>({} as DialogContextProviderActions);
@@ -262,6 +264,14 @@ export const DialogContextProvider = ({
         [Toast, showDialog]
     );
 
+    const doNavigate = useCallback(
+        async (callback: () => void, { keepVisibleDialog = false }: NavigateOptions = {}) => {
+            await hideDialogAll({ ignoreHistory: keepVisibleDialog });
+            callback();
+        },
+        [hideDialogAll]
+    );
+
     const dialogContents = useMemo(() => {
         if (visibleMultipleDialog) {
             // multiple visible dialogs
@@ -414,8 +424,9 @@ export const DialogContextProvider = ({
             toast,
             findDialogById,
             updateDialog,
+            doNavigate,
         };
-    }, [alert, confirm, findDialogById, hideDialog, hideDialogAll, updateDialog, showDialog, toast]);
+    }, [showDialog, hideDialog, hideDialogAll, confirm, alert, toast, findDialogById, updateDialog, doNavigate]);
 
     return (
         <DialogContext.Provider value={actions}>

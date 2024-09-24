@@ -19,7 +19,7 @@ export interface DialogActionContextProviderActions<DialogResult> {
 export const DialogActionContext = React.createContext<DialogActionContextProviderActions<any>>({} as DialogActionContextProviderActions<unknown>);
 
 export const DialogActionContextProvider = <DialogResult,>({ id, children }: DialogActionContextProviderProps) => {
-    const { hideDialog, hideDialogAll, findDialogById } = useDialogContext();
+    const { hideDialog, findDialogById, doNavigate } = useDialogContext();
     const hideWorkerId = useRef<ReturnType<typeof setTimeout>>();
 
     const currentDialog = useMemo(() => {
@@ -57,14 +57,6 @@ export const DialogActionContextProvider = <DialogResult,>({ id, children }: Dia
             }, afterMilliseconds);
         },
         [currentDialog, hideDialog, id]
-    );
-
-    const doNavigate = useCallback(
-        async (callback: () => void, { keepVisibleDialog = false }: NavigateOptions = {}) => {
-            await hideDialogAll({ ignoreHistory: keepVisibleDialog });
-            callback();
-        },
-        [hideDialogAll]
     );
 
     const actions = useMemo<DialogActionContextProviderActions<DialogResult>>(() => {
