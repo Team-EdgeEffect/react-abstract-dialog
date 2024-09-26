@@ -165,7 +165,6 @@ export const DialogContextProvider = ({
         async (id: number, { ignoreHistory = false }: ControlOptions = { ignoreHistory: false }) => {
             let promise: Promise<void> | undefined;
             const hideTarget: Dialog<undefined> | undefined = dialogs.current.find((dialog) => dialog.id === id);
-            console.log(dialogs.current);
             if (hideTarget) {
                 if (!(hideTarget.options?.ignoreHistory ?? false) && !ignoreHistory && experimental_withHistory) {
                     window.history.go(-1);
@@ -177,18 +176,6 @@ export const DialogContextProvider = ({
                 hideTarget.options?.onDismiss && hideTarget.options?.onDismiss();
 
                 setDialogs((prevDialogs) => {
-                    console.log(
-                        prevDialogs.map((dialog) => {
-                            if (dialog.id === id) {
-                                return {
-                                    ...dialog,
-                                    visible: false,
-                                };
-                            } else {
-                                return dialog;
-                            }
-                        })
-                    );
                     return prevDialogs.map((dialog) => {
                         if (dialog.id === id) {
                             return {
