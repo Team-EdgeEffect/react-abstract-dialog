@@ -40,7 +40,7 @@ interface DialogContextProviderProps {
 }
 
 export interface DialogContextProviderActions {
-    showDialog: <DialogResult = unknown>(element: ReactNode, options?: DialogOptions) => Promise<ShowDialogResult<DialogResult | undefined>>;
+    showDialog: <DialogResult = unknown>(element: ReactNode, options?: DialogOptions<DialogResult>) => Promise<ShowDialogResult<DialogResult | undefined>>;
     hideDialog: (id: number, controlOptions?: ControlOptions) => Promise<void>;
     hideDialogAll: (controlOptions?: ControlOptions) => Promise<void>;
     confirm: (args: ConfirmProps, controlOptions?: ControlOptions) => Promise<ConfirmResult>;
@@ -85,9 +85,9 @@ export const DialogContextProvider = ({
     const showDialog = useCallback(
         async <DialogResult = unknown,>(
             element: ReactNode,
-            { ignoreHistory = false, ...options }: DialogOptions = { ignoreHistory: false }
+            { ignoreHistory = false, onCreated, ...options }: DialogOptions<DialogResult> = { ignoreHistory: false }
         ): Promise<ShowDialogResult<DialogResult | undefined>> => {
-            const dialogOptions: DialogOptions = { ...options, ignoreHistory };
+            const dialogOptions: DialogOptions<DialogResult> = { ...options, ignoreHistory };
 
             let createdId: number;
             let resolve: ((value: ShowDialogResult<DialogResult | undefined> | PromiseLike<ShowDialogResult<DialogResult | undefined>>) => void) | undefined =
@@ -149,6 +149,7 @@ export const DialogContextProvider = ({
             }
             lastVisibleDialogId.current = createdDialog.id;
 
+            onCreated && onCreated(createdDialog);
             return promise;
         },
         [addHistory, dialogs, experimental_withHistory]

@@ -10,10 +10,11 @@ export type DialogType = typeof DIALOG_TYPE_CONFIRM | typeof DIALOG_TYPE_ALERT |
 export interface ControlOptions {
     ignoreHistory?: boolean; // default false
 }
-export interface DialogOptions extends ControlOptions {
+export interface DialogOptions<DialogResult> extends ControlOptions {
     unique?: string; // unique 를 할당하면, 해당 unique 로 2개 이상(visible) 표시 되지 않도록 합니다.
     dialogType?: DialogType;
     onDismiss?: () => void;
+    onCreated?: (created: Dialog<DialogResult>) => void;
 }
 
 export interface Dialog<DialogResult = unknown> {
@@ -21,7 +22,7 @@ export interface Dialog<DialogResult = unknown> {
     element: ReactNode;
     visible: boolean;
     resolve: (value: ShowDialogResult<DialogResult> | PromiseLike<ShowDialogResult<DialogResult>>) => void;
-    options?: DialogOptions;
+    options?: DialogOptions<DialogResult>;
     hash?: number;
     order: number;
 }
