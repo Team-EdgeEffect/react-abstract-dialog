@@ -66,12 +66,18 @@ export const DialogContextProvider = ({
     onInterceptScrollBlocking,
     children,
 }: DialogContextProviderProps) => {
-    const [dialogs, setDialogs] = useState<Array<Dialog<any>>>([]);
+    const dialogs = useRef<Array<Dialog<any>>>([]);
+    const [renderHash, setRenderHash] = useState<number>(0);
 
     const lastVisibleDialogId = useRef<number>(0);
     const beforeOverflow = useRef<string>("");
 
     const backPromiseResolver = useRef<() => void>();
+
+    const setDialogs = useCallback((setter: (prevDialogs: Array<Dialog<any>>) => Array<Dialog<any>>) => {
+        dialogs.current = setter([...dialogs.current]);
+        setRenderHash(new Date().getTime());
+    }, []);
 
     const addHistory = useCallback(
         (dialogId: number) => {
@@ -108,7 +114,7 @@ export const DialogContextProvider = ({
 
             let createdDialog: Dialog<DialogResult>;
             const foundDialogByUnique: Dialog<DialogResult> | undefined =
-                options?.unique !== undefined ? dialogs.find((dialog) => dialog.options?.unique === options.unique) : undefined;
+                options?.unique !== undefined ? dialogs.current.find((dialog) => dialog.options?.unique === options.unique) : undefined;
             if (foundDialogByUnique) {
                 createdDialog = {
                     id: foundDialogByUnique.id,
@@ -117,7 +123,7 @@ export const DialogContextProvider = ({
                     resolve,
                     options: dialogOptions,
                     hash: new Date().getTime(),
-                    order: foundDialogByUnique.visible ? foundDialogByUnique.order : dialogs.length,
+                    order: foundDialogByUnique.visible ? foundDialogByUnique.order : dialogs.current.length,
                 };
                 setDialogs((prevDialogs) => {
                     return prevDialogs.map((prevDialog) => {
@@ -137,7 +143,7 @@ export const DialogContextProvider = ({
                     visible: true,
                     resolve,
                     options: dialogOptions,
-                    order: dialogs.length,
+                    order: dialogs.current.length,
                 };
                 setDialogs((prevDialogs) => {
                     return [...prevDialogs, createdDialog];
@@ -152,13 +158,14 @@ export const DialogContextProvider = ({
             onCreated && onCreated(createdDialog);
             return promise;
         },
-        [addHistory, dialogs, experimental_withHistory]
+        [addHistory, experimental_withHistory, setDialogs]
     );
 
     const hideDialog = useCallback(
         async (id: number, { ignoreHistory = false }: ControlOptions = { ignoreHistory: false }) => {
             let promise: Promise<void> | undefined;
-            const hideTarget: Dialog<undefined> | undefined = dialogs.find((dialog) => dialog.id === id);
+            const hideTarget: Dialog<undefined> | undefined = dialogs.current.find((dialog) => dialog.id === id);
+            console.log(dialogs.current);
             if (hideTarget) {
                 if (!(hideTarget.options?.ignoreHistory ?? false) && !ignoreHistory && experimental_withHistory) {
                     window.history.go(-1);
@@ -170,6 +177,18 @@ export const DialogContextProvider = ({
                 hideTarget.options?.onDismiss && hideTarget.options?.onDismiss();
 
                 setDialogs((prevDialogs) => {
+                    console.log(
+                        prevDialogs.map((dialog) => {
+                            if (dialog.id === id) {
+                                return {
+                                    ...dialog,
+                                    visible: false,
+                                };
+                            } else {
+                                return dialog;
+                            }
+                        })
+                    );
                     return prevDialogs.map((dialog) => {
                         if (dialog.id === id) {
                             return {
@@ -187,13 +206,13 @@ export const DialogContextProvider = ({
                 await promise;
             }
         },
-        [dialogs, experimental_withHistory]
+        [experimental_withHistory, setDialogs]
     );
 
     const hideDialogAll = useCallback(
         async ({ ignoreHistory = false }: ControlOptions = { ignoreHistory: false }) => {
             let promise: Promise<void> | undefined;
-            const hideTargets: Array<Dialog> = dialogs.filter((dialog) => dialog.visible);
+            const hideTargets: Array<Dialog> = dialogs.current.filter((dialog) => dialog.visible);
             const backwardDelta = hideTargets.reduce((acc, hideTarget) => {
                 return acc + (!(hideTarget.options?.ignoreHistory ?? false) ? 1 : 0);
             }, 0);
@@ -226,7 +245,7 @@ export const DialogContextProvider = ({
                 await promise;
             }
         },
-        [dialogs, experimental_withHistory]
+        [experimental_withHistory, setDialogs]
     );
 
     const confirm = useCallback(
@@ -274,9 +293,10 @@ export const DialogContextProvider = ({
     );
 
     const dialogContents = useMemo(() => {
+        let elements: JSX.Element[];
         if (visibleMultipleDialog) {
             // multiple visible dialogs
-            return dialogs
+            elements = dialogs.current
                 .filter((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST)
                 .sort((a, b) => a.order - b.order)
                 .map((dialog) => {
@@ -288,21 +308,23 @@ export const DialogContextProvider = ({
                 });
         } else {
             // single visible dialog
-            const foundLastVisibleDialog = dialogs.findLast((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST);
+            const foundLastVisibleDialog = dialogs.current.findLast((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST);
             if (foundLastVisibleDialog !== undefined) {
-                return [
+                elements = [
                     <Fragment key={foundLastVisibleDialog.id}>
                         <DialogActionContextProvider id={foundLastVisibleDialog.id}>{foundLastVisibleDialog.element}</DialogActionContextProvider>
                     </Fragment>,
                 ];
             } else {
-                return [];
+                elements = [];
             }
         }
-    }, [dialogs, visibleMultipleDialog]);
+        return elements;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [renderHash, visibleMultipleDialog]);
 
     const toastContents = useMemo(() => {
-        return dialogs
+        const elements: JSX.Element[] = dialogs.current
             ?.filter((dialog) => dialog.visible && dialog.options?.dialogType === DIALOG_TYPE_TOAST)
             .sort((a, b) => a.order - b.order)
             .map((dialog) => {
@@ -312,15 +334,14 @@ export const DialogContextProvider = ({
                     </Fragment>
                 );
             });
-    }, [dialogs]);
+        return elements;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [renderHash]);
 
-    const findDialogById = useCallback(
-        <DialogResult = unknown,>(id: number) => {
-            const dialog: Dialog<DialogResult> | undefined = dialogs.find((dialog) => dialog.id === id);
-            return dialog;
-        },
-        [dialogs]
-    );
+    const findDialogById = useCallback(<DialogResult = unknown,>(id: number) => {
+        const dialog: Dialog<DialogResult> | undefined = dialogs.current.find((dialog) => dialog.id === id);
+        return dialog;
+    }, []);
 
     const updateDialog = useCallback(
         (id: number, update: UpdateDialog) => {
@@ -340,19 +361,19 @@ export const DialogContextProvider = ({
                 return false;
             }
         },
-        [findDialogById]
+        [findDialogById, setDialogs]
     );
 
     // scroll blocking
     useEffect(() => {
         if (onInterceptScrollBlocking) {
             onInterceptScrollBlocking(
-                dialogs.filter((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST),
-                dialogs.filter((dialog) => dialog.visible && dialog.options?.dialogType === DIALOG_TYPE_TOAST)
+                dialogs.current.filter((dialog) => dialog.visible && dialog.options?.dialogType !== DIALOG_TYPE_TOAST),
+                dialogs.current.filter((dialog) => dialog.visible && dialog.options?.dialogType === DIALOG_TYPE_TOAST)
             );
         } else {
             const visibleDialogCount =
-                dialogs.reduce((acc, dialog) => {
+                dialogs.current.reduce((acc, dialog) => {
                     return acc + (dialog.options?.dialogType !== DIALOG_TYPE_TOAST && dialog.visible ? 1 : 0);
                 }, 0) ?? 0;
 
@@ -370,7 +391,7 @@ export const DialogContextProvider = ({
                 }
             }
         }
-    }, [dialogs, dialogs.length, onInterceptScrollBlocking]);
+    }, [renderHash, onInterceptScrollBlocking]);
 
     // history
     useEffect(() => {
@@ -381,8 +402,8 @@ export const DialogContextProvider = ({
 
                 const url = new URL(window.location.href);
                 const currentDialogId = Number(url.searchParams.get(experimental_historySearchParamKey)) || 0;
-                const currentDialog = dialogs.find((dialog) => dialog.id === currentDialogId);
-                const lastVisibleDialog = dialogs.find((dialog) => dialog.id === lastVisibleDialogId.current);
+                const currentDialog = dialogs.current.find((dialog) => dialog.id === currentDialogId);
+                const lastVisibleDialog = dialogs.current.find((dialog) => dialog.id === lastVisibleDialogId.current);
 
                 let doHistoryWork = true;
                 if (currentDialogId >= lastVisibleDialogId.current) {
@@ -413,7 +434,7 @@ export const DialogContextProvider = ({
                 window.removeEventListener("popstate", onPopState);
             };
         }
-    }, [dialogs, hideDialog, updateDialog, experimental_historySearchParamKey, experimental_withHistory, experimental_withHistoryForwardRestore]);
+    }, [hideDialog, updateDialog, experimental_historySearchParamKey, experimental_withHistory, experimental_withHistoryForwardRestore]);
 
     const actions = useMemo<DialogContextProviderActions>(() => {
         return {
@@ -432,6 +453,7 @@ export const DialogContextProvider = ({
     return (
         <DialogContext.Provider value={actions}>
             {children}
+
             {selectComponent(toastContents.length > 0, () => (
                 <ToastContainer>{toastContents}</ToastContainer>
             ))}
