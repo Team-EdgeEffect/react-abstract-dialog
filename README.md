@@ -247,3 +247,8 @@ const MyComponent = () => {
     ```
 
     -   자세한 내용은 dialog example 의 redirect 관련 내용을 참고하세요. (`redirect-example-dialog.tsx`)
+
+# TODO
+
+-   use mount test (show and hide)
+-   history test
